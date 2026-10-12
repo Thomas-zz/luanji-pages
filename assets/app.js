@@ -13,6 +13,7 @@
   var shotStorePromise = null;
   var shotStoreWarned = false;
   var shotListKey = "";
+  var ocrNotified = false;
   var activeOverlay = null;
   var lastFocused = null;
   var toastTimer = null;
@@ -282,6 +283,62 @@
     renderShots();
   }
 
+  /* ---------- 认字：把贴在纸上的图转成字 ---------- */
+
+  function ocrShot(button) {
+    var holder = button.closest(".paper-shot");
+    var id = holder ? holder.getAttribute("data-shot-id") : null;
+    if (!id || button.disabled) return;
+    button.disabled = true;
+    button.textContent = "…";
+    loadShot(id).then(function (src) {
+      if (!src) throw new Error("missing");
+      if (!ocrNotified) {
+        ocrNotified = true;
+        toast("第一次认字，要先把字库装进本机，稍等一会儿。");
+      }
+      return window.LuanjiOCR.recognize(src, function (progress) {
+        button.textContent = Math.max(1, Math.round(progress * 100)) + "%";
+      });
+    }).then(function (text) {
+      button.disabled = false;
+      button.textContent = "认字";
+      if (!text) {
+        toast("这张图上没认出字。");
+        return;
+      }
+      insertOcrText(id, text);
+      toast("认出来的字写在图下面了。");
+    }).catch(function () {
+      button.disabled = false;
+      button.textContent = "认字";
+      toast("没认成。换一张印得清楚的图试试。");
+    });
+  }
+
+  function insertOcrText(id, text) {
+    var textarea = $("#write");
+    var value = textarea.value;
+    var caret;
+    if (value.indexOf(shotMarker(id)) < 0) {
+      /* 标记被手动删掉了：认出的字补到纸的末尾。 */
+      var lead = value && value.slice(-1) !== "\n" ? "\n" : "";
+      textarea.value = value + lead + text;
+      caret = textarea.value.length;
+    } else {
+      var insertAt = value.indexOf(shotMarker(id)) + shotMarker(id).length;
+      var before = value.slice(0, insertAt);
+      var after = value.slice(insertAt);
+      var prefix = "\n";
+      var suffix = after && after.charAt(0) !== "\n" ? "\n" : "";
+      textarea.value = before + prefix + text + suffix + after;
+      caret = insertAt + prefix.length + text.length;
+    }
+    textarea.setSelectionRange(caret, caret);
+    afterDraftEdit();
+    focusTextarea(textarea);
+  }
+
   function handleShotFiles(fileList) {
     var files = Array.prototype.filter.call(fileList || [], function (file) {
       return file && file.type && file.type.indexOf("image/") === 0;
@@ -312,6 +369,7 @@
     wrap.innerHTML = ids.map(function (id) {
       return '<span class="paper-shot" data-shot-id="' + esc(id) + '">' +
         '<img alt="贴在这张纸上的图">' +
+        '<button class="paper-shot-ocr" type="button" aria-label="把这张图上的字认下来">认字</button>' +
         '<button class="paper-shot-remove" type="button" aria-label="把这张图从纸上取下">×</button>' +
         '</span>';
     }).join("");
@@ -986,10 +1044,15 @@
       this.value = "";
     });
     $("#paper-shots").addEventListener("click", function (event) {
-      var button = event.target.closest ? event.target.closest(".paper-shot-remove") : null;
-      if (!button) return;
-      var holder = button.closest(".paper-shot");
-      if (holder) removeShotFromDraft(holder.getAttribute("data-shot-id"));
+      if (!event.target.closest) return;
+      var remove = event.target.closest(".paper-shot-remove");
+      if (remove) {
+        var holder = remove.closest(".paper-shot");
+        if (holder) removeShotFromDraft(holder.getAttribute("data-shot-id"));
+        return;
+      }
+      var ocr = event.target.closest(".paper-shot-ocr");
+      if (ocr) ocrShot(ocr);
     });
 
     document.addEventListener("keydown", function (event) {

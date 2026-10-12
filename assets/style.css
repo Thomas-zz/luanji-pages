@@ -282,6 +282,28 @@ kbd {
   transition: opacity .15s ease;
 }
 .paper-shot:hover .paper-shot-remove, .paper-shot-remove:focus-visible { opacity: 1; }
+.paper-shot-ocr {
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 2px 4px 1px;
+  border-radius: 9px;
+  color: #fdfaf3;
+  background: rgba(45, 42, 36, .68);
+  font: 9px/1 var(--font-ui);
+  letter-spacing: .08em;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.paper-shot:hover .paper-shot-ocr, .paper-shot-ocr:focus-visible { opacity: 1; }
+.paper-shot-ocr:disabled { opacity: 1; background: rgba(49, 83, 111, .82); }
+@media (pointer: coarse) {
+  .paper-shot-ocr { opacity: 1; }
+}
 .paper.is-shot-target { outline: 2px dashed rgba(49, 83, 111, .55); outline-offset: -10px; }
 
 /* ---------- 读纸 / 翻纸里的图 ---------- */
