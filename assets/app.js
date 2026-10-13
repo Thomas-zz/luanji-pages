@@ -400,8 +400,33 @@
           return;
         }
         img.src = src;
+        img.addEventListener("click", function () { openShotViewer(src); });
       });
     });
+  }
+
+  /* ---------- 看图：点开贴在纸上的图 ---------- */
+
+  var shotViewerOpen = false;
+
+  function openShotViewer(src) {
+    var viewer = $("#ov-shot");
+    if (!viewer) return;
+    viewer.innerHTML = '<figure class="shot-viewer"><img src="' + src + '" alt="贴在纸上的图，看大图"></figure>';
+    viewer.hidden = false;
+    document.body.classList.add("overlay-open");
+    shotViewerOpen = true;
+    viewer.addEventListener("click", closeShotViewer);
+  }
+
+  function closeShotViewer() {
+    var viewer = $("#ov-shot");
+    if (!viewer || !shotViewerOpen) return;
+    shotViewerOpen = false;
+    viewer.removeEventListener("click", closeShotViewer);
+    viewer.hidden = true;
+    viewer.innerHTML = "";
+    if (!activeOverlay) document.body.classList.remove("overlay-open");
   }
 
   function sortedRecords(byCreated) {
@@ -1052,17 +1077,30 @@
         return;
       }
       var ocr = event.target.closest(".paper-shot-ocr");
-      if (ocr) ocrShot(ocr);
+      if (ocr) { ocrShot(ocr); return; }
+      var shot = event.target.closest(".paper-shot");
+      if (shot) {
+        var image = $("img", shot);
+        if (image && image.src && !shot.classList.contains("is-missing")) openShotViewer(image.src);
+      }
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && activeOverlay) {
-        event.preventDefault();
-        closeOverlay();
-        return;
+      if (event.key === "Escape") {
+        if (shotViewerOpen) {
+          event.preventDefault();
+          closeShotViewer();
+          return;
+        }
+        if (activeOverlay) {
+          event.preventDefault();
+          closeOverlay();
+          return;
+        }
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        if (shotViewerOpen) closeShotViewer();
         if (activeOverlay) closeOverlay();
         openSearch();
       }

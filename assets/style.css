@@ -315,7 +315,9 @@ kbd {
   border: 1px solid var(--line);
   border-radius: 2px;
   box-shadow: 0 4px 14px rgba(67, 52, 32, .10);
+  cursor: zoom-in;
 }
+.read-copy .shot:hover, .flip-card-copy .shot:hover { box-shadow: 0 6px 20px rgba(67, 52, 32, .18); }
 .shot-missing {
   display: inline-block;
   margin: 4px 0;
@@ -326,6 +328,28 @@ kbd {
   font-size: 13px;
   letter-spacing: .04em;
 }
+
+/* ---------- 看图 ---------- */
+.shot-overlay { z-index: 50; }
+.shot-viewer {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(94vw, 1280px);
+  max-height: calc(100dvh - 56px);
+  cursor: zoom-out;
+}
+.shot-viewer img {
+  max-width: 100%;
+  max-height: calc(100dvh - 56px);
+  object-fit: contain;
+  border: 1px solid rgba(205, 194, 174, .82);
+  border-radius: 3px;
+  background: var(--paper);
+  box-shadow: 0 30px 90px -24px rgba(20, 15, 8, .6);
+}
+.paper-shot { cursor: zoom-in; }
 
 /* ---------- 纸摞 ---------- */
 .stack-area { position: relative; margin-top: 36px; padding-bottom: 20px; }
